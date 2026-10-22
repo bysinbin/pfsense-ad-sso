@@ -209,6 +209,34 @@ function posea_sso_ldap_list_users($conn, $base_dn, $max = 300) {
     return $users;
 }
 
+function posea_sso_ldap_get_dns_mappings($conn, $base_dn) {
+    if (!$conn) return [];
+    $dns_map = [];
+    $base = "DC=DomainDnsZones," . $base_dn;
+    $sr = @ldap_search($conn, $base, "(&(objectClass=dnsNode)(!(name=@))(!(name=*_msdcs*))(!(name=*_sites*)))", ["name", "dnsRecord"]);
+    if ($sr) {
+        $entries = @ldap_get_entries($conn, $sr);
+        for ($i = 0; $i < ($entries['count'] ?? 0); $i++) {
+            $name = strtoupper(trim($entries[$i]['name'][0] ?? ''));
+            if (isset($entries[$i]['dnsrecord'])) {
+                for ($r = 0; $r < $entries[$i]['dnsrecord']['count']; $r++) {
+                    $raw = $entries[$i]['dnsrecord'][$r];
+                    if (strlen($raw) >= 28) {
+                        $type = (ord($raw[3]) << 8) | ord($raw[2]);
+                        if ($type == 1) { // A Record
+                            $ip = inet_ntop(substr($raw, 24, 4));
+                            if ($ip && substr($ip, 0, 8) === '192.168.') {
+                                $dns_map[$name] = $ip;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return $dns_map;
+}
+
 function posea_sso_ldap_list_computers($conn, $base_dn, $max = 300) {
     if (!$conn) return [];
     $filter = "(objectClass=computer)";

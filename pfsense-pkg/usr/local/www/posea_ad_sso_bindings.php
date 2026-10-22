@@ -126,7 +126,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ldap_conn = posea_sso_ldap_connect($cfg);
         if ($ldap_conn && posea_sso_ldap_bind($ldap_conn, $cfg['bind_user'], $cfg['bind_password'])) {
             $comps = posea_sso_ldap_list_computers($ldap_conn, $cfg['base_dn']);
+            $dns_map = posea_sso_ldap_get_dns_mappings($ldap_conn, $cfg['base_dn']);
             $count = 0;
+            $updated_ips = 0;
+
+            // First: update any existing bindings with missing IPs from DNS
+            foreach ($bindings as &$b) {
+                $h = strtoupper($b['hostname']);
+                if (isset($dns_map[$h])) {
+                    $real_ip = $dns_map[$h];
+                    if (empty($b['ip']) || $b['ip'] !== $real_ip) {
+                        $b['ip'] = $real_ip;
+                        $updated_ips++;
+                    }
+                    if (empty($b['mac']) && isset($discovered_devices[$real_ip]['mac'])) {
+                        $b['mac'] = $discovered_devices[$real_ip]['mac'];
+                    }
+                }
+            }
+
             foreach ($comps as $c) {
                 $comp_name = strtoupper($c['name']);
                 if (empty($comp_name)) continue;
@@ -150,11 +168,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
 
+                    $c_ip = $dns_map[$comp_name] ?? "";
+                    $c_mac = (!empty($c_ip) && isset($discovered_devices[$c_ip]['mac'])) ? $discovered_devices[$c_ip]['mac'] : "";
+
                     $bindings[] = [
                         "id" => "bind_" . uniqid(),
                         "hostname" => $comp_name,
-                        "ip" => "",
-                        "mac" => "",
+                        "ip" => $c_ip,
+                        "mac" => $c_mac,
                         "username" => strtolower(str_replace(' ', '.', $u_hint ?: $comp_name)),
                         "display_name" => $u_hint ?: $comp_name,
                         "department" => "Domain Computers",
@@ -166,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             @ldap_close($ldap_conn);
             posea_sso_save_bindings($bindings);
-            $save_msg = "Active Directory'den {$count} adet bilgisayar nesnesi içe aktarıldı.";
+            $save_msg = "Active Directory'den {$count} adet bilgisayar içe aktarıldı, {$updated_ips} adet mevcut bilgisayarın dinamik IP adresi AD DNS üzerinden güncellendi.";
         } else {
             $save_msg = "Active Directory LDAP bağlantısı kurulamadı. Lütfen 'AD Diagnostic' sekmesinden ayarları doğrulayın.";
         }

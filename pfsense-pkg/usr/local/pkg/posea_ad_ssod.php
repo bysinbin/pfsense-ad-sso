@@ -91,6 +91,31 @@ while ($running) {
                     if (!posea_sso_ldap_bind($ldap_conn, $cfg['bind_user'], $cfg['bind_password'])) {
                         @ldap_close($ldap_conn);
                         $ldap_conn = null;
+                    } else {
+                        // Automatically correlate computer hostnames with their real dynamic IPs from AD DNS
+                        $dns_map = posea_sso_ldap_get_dns_mappings($ldap_conn, $cfg['base_dn']);
+                        if (!empty($dns_map)) {
+                            $bindings_changed = false;
+                            foreach ($bindings as &$b) {
+                                $h = strtoupper($b['hostname'] ?? '');
+                                if (isset($dns_map[$h])) {
+                                    $real_ip = $dns_map[$h];
+                                    if (empty($b['ip']) || $b['ip'] !== $real_ip) {
+                                        $b['ip'] = $real_ip;
+                                        $bind_by_ip[$real_ip] = $b;
+                                        $bindings_changed = true;
+                                    }
+                                    if (!empty($devices[$real_ip]['mac']) && empty($b['mac'])) {
+                                        $b['mac'] = $devices[$real_ip]['mac'];
+                                        $bind_by_mac[strtolower($b['mac'])] = $b;
+                                        $bindings_changed = true;
+                                    }
+                                }
+                            }
+                            if ($bindings_changed) {
+                                posea_sso_save_bindings($bindings);
+                            }
+                        }
                     }
                 }
             }
@@ -151,6 +176,33 @@ while ($running) {
                         "last_seen" => date("Y-m-d H:i:s", $now),
                         "status" => "authenticated"
                     ];
+                }
+            }
+
+            // Also ensure all statically bound computers with known IP addresses are enrolled into active sessions
+            foreach ($bindings as $b) {
+                if (!empty($b['enabled']) && !empty($b['ip'])) {
+                    $b_ip = $b['ip'];
+                    if (!isset($sessions[$b_ip])) {
+                        $u_name = trim($b['username'] ?? '');
+                        if ($u_name) {
+                            $is_admin = in_array(strtolower($u_name), $admin_list, true);
+                            $sessions[$b_ip] = [
+                                "ip" => $b_ip,
+                                "mac" => $b['mac'] ?: ($devices[$b_ip]['mac'] ?? ''),
+                                "hostname" => $b['hostname'] ?? '',
+                                "username" => $u_name,
+                                "display_name" => $b['display_name'] ?: $u_name,
+                                "groups" => ["Domain Users"],
+                                "department" => $b['department'] ?: "Genel",
+                                "mail" => "",
+                                "mode" => "mode2_binding",
+                                "is_admin" => $is_admin,
+                                "last_seen" => date("Y-m-d H:i:s", $now),
+                                "status" => "authenticated"
+                            ];
+                        }
+                    }
                 }
             }
 
