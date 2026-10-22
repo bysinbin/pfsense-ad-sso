@@ -67,8 +67,18 @@ function posea_sso_save_config($cfg) {
 
 function posea_sso_ldap_connect($cfg) {
     $host = $cfg['dc_host'];
-    $port = intval($cfg['dc_port'] ?: ($cfg['use_ssl'] ? 636 : 389));
-    $protocol = $cfg['use_ssl'] ? "ldaps://" : "ldap://";
+    $use_ssl = !empty($cfg['use_ssl']);
+    $port = intval($cfg['dc_port'] ?: ($use_ssl ? 636 : 389));
+
+    // If port 389 is used, use ldap:// since 389 is standard plaintext LDAP
+    if ($port === 389) {
+        $protocol = "ldap://";
+    } else {
+        $protocol = $use_ssl ? "ldaps://" : "ldap://";
+    }
+
+    // Prevent OpenSSL rejection of self-signed internal AD certificates
+    putenv('LDAPTLS_REQCERT=never');
 
     $uri = "{$protocol}{$host}:{$port}";
     $conn = @ldap_connect($uri);
@@ -85,9 +95,49 @@ function posea_sso_ldap_connect($cfg) {
 }
 
 function posea_sso_ldap_bind($conn, $user, $pass) {
-    if (!$conn) return false;
+    if (!$conn || empty($user)) return false;
+
+    // Attempt 1: Direct bind
     $bind = @ldap_bind($conn, $user, $pass);
-    return $bind ? true : false;
+    if ($bind) return true;
+
+    // Attempt 2: If user is DOMAIN\username, try username@domain.local
+    if (strpos($user, '\\') !== false) {
+        $parts = explode('\\', $user, 2);
+        $domain_part = strtolower($parts[0]);
+        $user_part = $parts[1];
+        if (@ldap_bind($conn, "{$user_part}@{$domain_part}.local", $pass)) return true;
+        if (@ldap_bind($conn, "{$user_part}@{$domain_part}", $pass)) return true;
+    }
+
+    // Attempt 3: If user is username@domain.local, try DOMAIN\username
+    if (strpos($user, '@') !== false) {
+        $parts = explode('@', $user, 2);
+        $short_dom = explode('.', $parts[1])[0];
+        $netbios = strtoupper($short_dom) . '\\' . $parts[0];
+        if (@ldap_bind($conn, $netbios, $pass)) return true;
+    }
+
+    // Attempt 4: Try just username
+    $plain = preg_replace('/^.*[\\\\@]/', '', $user);
+    if (@ldap_bind($conn, $plain, $pass)) return true;
+
+    return false;
+}
+
+function posea_sso_discover_dc($domain) {
+    if (empty($domain)) return null;
+    $srvs = @dns_get_record("_ldap._tcp.dc._msdcs." . $domain, DNS_SRV);
+    if (!empty($srvs[0]['target'])) {
+        $target = $srvs[0]['target'];
+        $ip = @gethostbyname($target);
+        return [
+            "target" => $target,
+            "ip" => $ip,
+            "port" => $srvs[0]['port'] ?? 389
+        ];
+    }
+    return null;
 }
 
 function posea_sso_ldap_query_user($conn, $base_dn, $username) {
