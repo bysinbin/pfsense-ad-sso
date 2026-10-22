@@ -231,9 +231,39 @@ function posea_sso_discover_devices() {
         }
     }
 
-    // 3. Resolve hostnames for empty ones using PTR / gethostbyaddr
+    // 2b. Include static mappings from pfSense config.xml
+    global $config;
+    if (!empty($config['dhcpd']) && is_array($config['dhcpd'])) {
+        foreach ($config['dhcpd'] as $if_cfg) {
+            if (!empty($if_cfg['staticmap']) && is_array($if_cfg['staticmap'])) {
+                foreach ($if_cfg['staticmap'] as $sm) {
+                    $sm_ip = trim($sm['ipaddr'] ?? '');
+                    $sm_mac = strtolower(trim($sm['mac'] ?? ''));
+                    $sm_host = trim($sm['hostname'] ?? ($sm['descr'] ?? ''));
+                    if (!empty($sm_ip)) {
+                        if (!isset($devices[$sm_ip])) {
+                            $devices[$sm_ip] = [
+                                "ip" => $sm_ip,
+                                "mac" => $sm_mac,
+                                "hostname" => $sm_host,
+                                "source" => "dhcp_static"
+                            ];
+                        } else {
+                            if ($sm_mac && empty($devices[$sm_ip]['mac'])) $devices[$sm_ip]['mac'] = $sm_mac;
+                            if ($sm_host && empty($devices[$sm_ip]['hostname'])) $devices[$sm_ip]['hostname'] = $sm_host;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Resolve hostnames for empty ones using PTR / gethostbyaddr (quick timeout check)
+    // Only attempt on up to 10 empty hosts to avoid blocking page execution
+    $lookup_budget = 5;
     foreach ($devices as $ip => &$dev) {
-        if (empty($dev['hostname'])) {
+        if (empty($dev['hostname']) && $lookup_budget > 0) {
+            $lookup_budget--;
             $host = @gethostbyaddr($ip);
             if ($host && $host !== $ip) {
                 // Strip domain part if present

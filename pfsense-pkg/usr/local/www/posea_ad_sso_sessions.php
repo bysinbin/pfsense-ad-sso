@@ -70,46 +70,70 @@ $daemon_running = is_service_running("posea_ad_sso");
 $pid = file_exists(POSEA_SSO_PID) ? trim(file_get_contents(POSEA_SSO_PID)) : '-';
 ?>
 
+<style>
+.sso-card {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    border-radius: 8px !important;
+    padding: 16px 14px !important;
+    margin-bottom: 18px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25) !important;
+    text-align: center;
+}
+.sso-card-title {
+    color: #e2e8f0 !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    margin: 0 0 8px 0 !important;
+}
+.sso-card-value {
+    font-size: 2.2rem !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
+    margin: 4px 0 !important;
+}
+.sso-card-sub {
+    font-size: 0.8rem !important;
+    color: #94a3b8 !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+}
+</style>
+
 <div class="row">
     <div class="col-sm-12">
         <!-- Stat Cards -->
         <div class="row">
             <div class="col-md-3 col-sm-6">
-                <div class="panel panel-default">
-                    <div class="panel-body text-center">
-                        <p class="text-muted" style="margin:0;"><i class="fa-solid fa-users"></i> Aktif Kullanıcı Oturumu</p>
-                        <h2 style="margin:5px 0; color:#0284c7; font-weight:bold;"><?=$total_sessions?></h2>
-                        <small class="text-success"><i class="fa-solid fa-circle-check"></i> Eşleşen IP'ler</small>
-                    </div>
+                <div class="sso-card">
+                    <p class="sso-card-title"><i class="fa-solid fa-users" style="color: #38bdf8;"></i> Aktif Oturumlar</p>
+                    <div class="sso-card-value" style="color: #38bdf8 !important;"><?=$total_sessions?></div>
+                    <p class="sso-card-sub"><i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> Eşleşen IP Sayısı</p>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
-                <div class="panel panel-default">
-                    <div class="panel-body text-center">
-                        <p class="text-muted" style="margin:0;"><i class="fa-solid fa-desktop"></i> Sabit PC Eşleme (Mod 2)</p>
-                        <h2 style="margin:5px 0; color:#10b981; font-weight:bold;"><?=$mod2_count?></h2>
-                        <small class="text-muted">DC Yüksüz Oturumlar</small>
-                    </div>
+                <div class="sso-card">
+                    <p class="sso-card-title"><i class="fa-solid fa-desktop" style="color: #4ade80;"></i> Sabit PC (Mod 2)</p>
+                    <div class="sso-card-value" style="color: #4ade80 !important;"><?=$mod2_count?></div>
+                    <p class="sso-card-sub">DC Yüksüz Oturumlar</p>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
-                <div class="panel panel-default">
-                    <div class="panel-body text-center">
-                        <p class="text-muted" style="margin:0;"><i class="fa-solid fa-user-shield"></i> Yönetici / Admin</p>
-                        <h2 style="margin:5px 0; color:#f59e0b; font-weight:bold;"><?=$admin_count?></h2>
-                        <small class="text-warning">Gezici İstisna Oturum</small>
-                    </div>
+                <div class="sso-card">
+                    <p class="sso-card-title"><i class="fa-solid fa-user-shield" style="color: #fbbf24;"></i> Yönetici / Admin</p>
+                    <div class="sso-card-value" style="color: #fbbf24 !important;"><?=$admin_count?></div>
+                    <p class="sso-card-sub" style="color: #fde047 !important;">Gezici İstisna Oturum</p>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
-                <div class="panel panel-default">
-                    <div class="panel-body text-center">
-                        <p class="text-muted" style="margin:0;"><i class="fa-solid fa-server"></i> SSO Servis Durumu</p>
-                        <h2 style="margin:5px 0; font-weight:bold; font-size:1.5rem;" class="<?=$daemon_running ? 'text-success' : 'text-danger'?>">
-                            <?=$daemon_running ? 'ÇALIŞIYOR' : 'DURDURULDU'?>
-                        </h2>
-                        <small class="text-muted">PID: <?=$pid?> | Mod: <?=strtoupper($cfg['mode'] ?? 'MODE2')?></small>
+                <div class="sso-card">
+                    <p class="sso-card-title"><i class="fa-solid fa-server" style="color: #c084fc;"></i> Servis Durumu</p>
+                    <div class="sso-card-value" style="font-size: 1.6rem !important; color: <?=$daemon_running ? '#4ade80' : '#f87171'?> !important;">
+                        <?=$daemon_running ? 'ÇALIŞIYOR' : 'DURDURULDU'?>
                     </div>
+                    <p class="sso-card-sub">PID: <?=$pid?> | Mod: <?=strtoupper($cfg['mode'] ?? 'MODE2')?></p>
                 </div>
             </div>
         </div>
