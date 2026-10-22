@@ -66,7 +66,7 @@ foreach ($sessions as $s) {
     if (($s['mode'] ?? '') === 'mode2_binding') $mod2_count++;
 }
 
-$daemon_running = is_service_running("posea_ad_sso");
+$daemon_running = posea_ad_sso_is_running();
 $pid = file_exists(POSEA_SSO_PID) ? trim(file_get_contents(POSEA_SSO_PID)) : '-';
 ?>
 

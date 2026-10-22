@@ -23,6 +23,18 @@ define('POSEA_SSO_RC', '/usr/local/etc/rc.d/posea_ad_sso.sh');
 
 @mkdir(POSEA_SSO_CONF_DIR, 0755, true);
 
+function posea_ad_sso_is_running() {
+    $pidfile = POSEA_SSO_PID;
+    if (file_exists($pidfile)) {
+        $pid = intval(trim(file_get_contents($pidfile)));
+        if ($pid > 0 && posix_kill($pid, 0)) {
+            return true;
+        }
+    }
+    $out = trim(shell_exec("/usr/bin/pgrep -f posea_ad_ssod.php 2>/dev/null") ?? '');
+    return !empty($out);
+}
+
 function posea_sso_log($msg, $level = "INFO") {
     $ts = date("Y-m-d H:i:s");
     $line = "[{$ts}] [{$level}] {$msg}\n";
