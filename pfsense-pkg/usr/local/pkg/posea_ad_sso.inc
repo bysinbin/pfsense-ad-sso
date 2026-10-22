@@ -18,7 +18,7 @@ define('POSEA_SSO_SESSIONS', POSEA_SSO_CONF_DIR . '/active_sessions.json');
 define('POSEA_SSO_BINDINGS', POSEA_SSO_CONF_DIR . '/bindings.json');
 define('POSEA_SSO_LOG', '/var/log/posea_ad_sso.log');
 define('POSEA_SSO_SOCK', '/var/run/posea_sso.sock');
-define('POSEA_SSO_PID', '/var/run/posea_ad_ssod.pid');
+define('POSEA_SSO_PID', '/var/run/posea_ad_sso.pid');
 define('POSEA_SSO_RC', '/usr/local/etc/rc.d/posea_ad_sso.sh');
 
 @mkdir(POSEA_SSO_CONF_DIR, 0755, true);
