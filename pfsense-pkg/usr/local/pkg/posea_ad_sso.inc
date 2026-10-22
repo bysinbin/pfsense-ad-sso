@@ -59,7 +59,9 @@ function posea_sso_get_config() {
         "auto_discover_dhcp" => true,
         "mode1_poll_interval_sec" => 10,
         "mode2_sync_interval_sec" => 60,
-        "export_poseafilter" => true
+        "export_poseafilter" => true,
+        "enable_captive_guest" => false,
+        "captive_zone" => "guest"
     ];
 
     if (file_exists(POSEA_SSO_CONF)) {

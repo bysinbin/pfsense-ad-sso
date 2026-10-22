@@ -128,6 +128,23 @@
             <type>checkbox</type>
             <default_value>on</default_value>
         </field>
+        <field>
+            <name>Captive Portal Entegrasyonu (Misafir Cihazlar)</name>
+            <type>listtopic</type>
+        </field>
+        <field>
+            <fielddescr>Misafir Cihaz Portal Yönlendirmesi</fielddescr>
+            <fieldname>enable_captive_guest</fieldname>
+            <description>Active Directory üzerinde oturumu bulunmayan misafir veya kişisel mobil cihazları otomatik olarak Captive Portal giriş ekranına yönlendirir. (Varsayılan: Devre Dışı)</description>
+            <type>checkbox</type>
+        </field>
+        <field>
+            <fielddescr>Captive Portal Bölgesi (Zone)</fielddescr>
+            <fieldname>captive_zone</fieldname>
+            <description>Yönlendirilecek pfSense Captive Portal Bölge adı (Zone Name, örn: guest veya lan).</description>
+            <type>input</type>
+            <default_value>guest</default_value>
+        </field>
     </fields>
     <custom_php_install_command>
         posea_ad_sso_install();

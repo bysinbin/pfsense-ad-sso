@@ -225,6 +225,24 @@ while ($running) {
         }
 
         posea_sso_save_sessions($sessions);
+
+            // Captive Portal Guest Device Discovery (Disabled by default)
+            if (!empty($cfg['enable_captive_guest'])) {
+                $guest_devices = [];
+                foreach ($devices as $ip => $dev) {
+                    if (!isset($sessions[$ip])) {
+                        $guest_devices[$ip] = [
+                            "ip" => $ip,
+                            "mac" => $dev['mac'] ?? '',
+                            "hostname" => $dev['hostname'] ?? 'Guest-Device',
+                            "status" => "captive_portal_required",
+                            "first_seen" => date('Y-m-d H:i:s')
+                        ];
+                    }
+                }
+                @file_put_contents(POSEA_SSO_CONF_DIR . '/guest_devices.json', json_encode($guest_devices, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            }
+
     }
 
     // Process IPC socket queries (non-blocking)
