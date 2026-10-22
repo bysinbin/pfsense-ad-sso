@@ -119,6 +119,33 @@ write_config("Installed Active Directory SSO package");
 posea_ad_sso_install();
 '
 
+# Step 4b: Register in FreeBSD pkg database (System > Package Manager)
+cat << 'EOF' > /tmp/manifest_posea_ad_sso.ucl
+name: "pfSense-pkg-PoseaADSSO"
+origin: "security/pfSense-pkg-PoseaADSSO"
+version: "1.0.0"
+comment: "Active Directory Single Sign-On (AD SSO) for pfSense"
+maintainer: "bysinbin"
+www: "https://github.com/bysinbin/pfsense-ad-sso"
+abi: "FreeBSD:15:amd64"
+arch: "freebsd:15:x86:64"
+prefix: "/usr/local"
+flatsize: 256000
+desc: "Active Directory Single Sign-On (AD SSO) for pfSense with Mod 2 fixed workstation-to-employee mapping, AD Integrated DNS discovery, DHCP correlation and sub-millisecond IPC lookup."
+categories: [
+    "security"
+]
+annotations: {
+    FreeBSD_version: "1500029",
+    repository: "pfSense"
+}
+files: {
+    /usr/local/pkg/posea_ad_ssod.php: "-"
+}
+EOF
+/usr/local/sbin/pkg-static register -t -M /tmp/manifest_posea_ad_sso.ucl 2>/dev/null || true
+rm -f /tmp/manifest_posea_ad_sso.ucl
+
 echo "[*] Step 5: Starting Posea AD SSO Service..."
 /usr/local/etc/rc.d/posea_ad_sso.sh start || true
 
