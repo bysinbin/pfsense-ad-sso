@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE packagegui SYSTEM "../schema/packages.dtd">
+<packagegui>
+    <name>poseaadsso</name>
+    <version>1.0.0</version>
+    <title>Services: Active Directory Single Sign-On (AD SSO)</title>
+    <include_file>/usr/local/pkg/posea_ad_sso.inc</include_file>
+    <menu>
+        <name>Active Directory SSO</name>
+        <section>Services</section>
+        <configfile>posea_ad_sso.xml</configfile>
+        <url>/pkg_edit.php?xml=posea_ad_sso.xml</url>
+    </menu>
+    <tabs>
+        <tab>
+            <text>General Settings</text>
+            <url>/pkg_edit.php?xml=posea_ad_sso.xml</url>
+            <active/>
+        </tab>
+        <tab>
+            <text>Active Sessions</text>
+            <url>/posea_ad_sso_sessions.php</url>
+        </tab>
+        <tab>
+            <text>Computer Bindings (Mod 2)</text>
+            <url>/posea_ad_sso_bindings.php</url>
+        </tab>
+        <tab>
+            <text>AD Diagnostic &amp; Test</text>
+            <url>/posea_ad_sso_test.php</url>
+        </tab>
+    </tabs>
+    <fields>
+        <field>
+            <name>General Settings</name>
+            <type>listtopic</type>
+        </field>
+        <field>
+            <fielddescr>Enable AD SSO</fielddescr>
+            <fieldname>enable</fieldname>
+            <description>Enable the Active Directory Single Sign-On background daemon for pfSense.</description>
+            <type>checkbox</type>
+        </field>
+        <field>
+            <fielddescr>Operating Mode</fielddescr>
+            <fieldname>mode</fieldname>
+            <description>Select authentication and tracking mechanism.</description>
+            <type>select</type>
+            <options>
+                <option><name>Mod 2: Sabit Bilgisayar-Kullanıcı Eşleme (Önerilen - DC'ye Yük Bindirmez)</name><value>mode2</value></option>
+                <option><name>Mod 1: Dinamik Güvenlik Olayı Dinleme (FSSO / Event Log 4624-4634)</name><value>mode1</value></option>
+            </options>
+            <default_value>mode2</default_value>
+        </field>
+        <field>
+            <name>Active Directory Domain Controller</name>
+            <type>listtopic</type>
+        </field>
+        <field>
+            <fielddescr>Domain Controller IP / Host</fielddescr>
+            <fieldname>dc_host</fieldname>
+            <description>IP address or FQDN of the Primary Active Directory Domain Controller (e.g. 192.168.2.10 or dc1.corp.local).</description>
+            <type>input</type>
+            <default_value>192.168.2.10</default_value>
+        </field>
+        <field>
+            <fielddescr>LDAP Port</fielddescr>
+            <fieldname>dc_port</fieldname>
+            <description>LDAP Port (389 for standard, 636 for LDAPS / SSL).</description>
+            <type>input</type>
+            <default_value>389</default_value>
+        </field>
+        <field>
+            <fielddescr>Use LDAPS / SSL</fielddescr>
+            <fieldname>use_ssl</fieldname>
+            <description>Encrypt Active Directory queries with LDAPS.</description>
+            <type>checkbox</type>
+        </field>
+        <field>
+            <fielddescr>Domain Name (FQDN)</fielddescr>
+            <fieldname>domain_name</fieldname>
+            <description>Active Directory realm name (e.g. corp.local or sirket.com.tr).</description>
+            <type>input</type>
+            <default_value>corp.local</default_value>
+        </field>
+        <field>
+            <fielddescr>Search Base DN</fielddescr>
+            <fieldname>base_dn</fieldname>
+            <description>Search Base Distinguished Name (e.g. DC=corp,DC=local).</description>
+            <type>input</type>
+            <default_value>DC=corp,DC=local</default_value>
+        </field>
+        <field>
+            <fielddescr>Bind Username (UPN)</fielddescr>
+            <fieldname>bind_user</fieldname>
+            <description>Service user account to read directory (e.g. administrator@corp.local or sso_service@corp.local).</description>
+            <type>input</type>
+            <default_value>administrator@corp.local</default_value>
+        </field>
+        <field>
+            <fielddescr>Bind Password</fielddescr>
+            <fieldname>bind_password</fieldname>
+            <description>Password for the AD bind service account.</description>
+            <type>password</type>
+        </field>
+        <field>
+            <name>Advanced &amp; Exception Settings</name>
+            <type>listtopic</type>
+        </field>
+        <field>
+            <fielddescr>Administrator Accounts</fielddescr>
+            <fieldname>admin_usernames</fieldname>
+            <description>Comma-separated list of administrative accounts that can roam or override fixed PC assignments (Default: administrator,admin,domain admins).</description>
+            <type>input</type>
+            <default_value>administrator,admin,bilgiislem,domain admins</default_value>
+        </field>
+        <field>
+            <fielddescr>Session TTL (Hours)</fielddescr>
+            <fieldname>session_ttl_hours</fieldname>
+            <description>Active session lease expiration time in hours (Default: 12).</description>
+            <type>input</type>
+            <default_value>12</default_value>
+        </field>
+        <field>
+            <fielddescr>Export to PoseaFilter &amp; 5651</fielddescr>
+            <fieldname>export_poseafilter</fieldname>
+            <description>Export active IP-User mappings to /var/etc/poseafilter/ad_users.json for UTM filtering and 5651 logging.</description>
+            <type>checkbox</type>
+            <default_value>on</default_value>
+        </field>
+    </fields>
+    <custom_php_install_command>
+        posea_ad_sso_install();
+    </custom_php_install_command>
+    <custom_php_deinstall_command>
+        posea_ad_sso_deinstall();
+    </custom_php_deinstall_command>
+    <custom_php_resync_config_command>
+        posea_ad_sso_resync();
+    </custom_php_resync_config_command>
+</packagegui>
